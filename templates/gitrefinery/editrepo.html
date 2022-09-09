@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  git-refinery-web - edit repo page template
+
+  Copyright (C) 2017 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - {% if form.instance.pk %}edit repo{% else %}add repo{% endif %} {% endblock %}
+-->
+
+
+
+{% block content %}
+{% autoescape on %}
+
+        <ul class="breadcrumb">
+            <li><a href="{% url 'repositories' %}">repositories</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{% if form.instance.pk %}{{ form.instance.name }}{% else %}add repo{% endif %}</li>
+        </ul>
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="page-header">
+                    <h1>{% if form.instance.pk %}Edit {{ form.instance.name }}{% else %}Add repository{% endif %}</h1>
+                </div>
+            </div> <!--  end of row -->
+        </div> <!-- end of container-fluid -->
+
+
+<form id="edit_repo_form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+<input type="submit" value="Save" class='btn btn-primary' />
+<a href="{% if form.instance.pk %}{% url 'repository' form.instance.name %}{% else %}{% url 'repositories' %}{% endif %}" class='btn btn-default'>Cancel</a>
+</form>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#edit_repo_form input:text, #edit_repo_form textarea").first().focus();
+    });
+</script>
+{% endblock %}

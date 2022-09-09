@@ -1,0 +1,223 @@
+git-refinery web interface
+==========================
+
+This is a small Django-based web application that is intended to help in
+the preparation of software release notes. It enables you to browse through
+commits in a git repository, add short notes on each commit and then gather
+up those notes. You can also easily search and categorise commits.
+
+There are two main methods of setting up this application - within
+a set of Docker containers, or standalone. The Docker-based setup
+is more suited for production whereas standalone is a bit easier
+for development. This document will consider only the Docker-based
+setup; for standalone please see README.devel.
+
+Docker Setup
+------------
+
+The dockersetup.py script will set up and configure a cluster of 3
+docker containers:
+
+  - gitrefineryapp: the application
+  - gitrefinerydb: the database
+  - gitrefineryweb: NGINX web server (as a proxy and for serving static content)
+
+The script will edit all necessary configuration files, build and launch all
+containers, and do the initial database setup.
+
+1) Install docker and docker-compose per instructions:
+
+        https://docs.docker.com/compose/install/
+
+   ** Note: for latest docker-compose version follow the directions above,
+      rather than using a perhaps outdated one provided by your distribution.
+
+2) Run the setup script (dockersetup.py). You can optionally supply your
+   hostname, proxy settings, a sql database file of layer mappings to import,
+   and a host to container port mapping. For more information, run:
+
+        ./dockersetup.py -h
+
+   Example command to run containers with a proxy:
+
+        ./dockersetup.py -p http://<proxyserver>:<port>
+
+   NOTE: If you want email sending to work (required for user registration and
+   password resets), you should use the -e/--email-host option to specify your
+   outgoing email server.
+
+3) Once the script completes, open a web browser and navigate to the URL
+   printed out by the script. By default that would be: https://localhost:8081
+
+4) If you need to rerun this script for any reason a second time, you'll need
+   to choose between two modes:
+
+   A) Updating (-u/--update) - updates the code and runs any database upgrades
+      if applicable, or
+
+   B) Reinstalling (-r/--reinstall) - deletes the containers and reinstalls
+      from scratch. Be warned that this will throw away all data in the
+      database.
+
+   Note that updating with -u/--update will only work if the configuration
+   changes originally made by dockersetup.py upon installation (e.g. passwords,
+   hostname, etc.) are still present in the source tree.
+
+
+TROUBLESHOOTING:
+
+- Network issues behind a proxy when building container: On some systems
+  (particularly where dnsmasq is installed), /etc/resolv.conf is set to
+  127.0.0.x, rather than your local DNS server. Docker will look there for
+  your DNS server, and when it fails to find it it will default to using a
+  public one (frequently 8.8.8.8). Many corporate proxies blocks public DNS
+  servers, so you will need to manually supply the DNS server to docker using
+  /etc/docker/daemon.json:
+
+        {"dns": ["xx.xx.xx.xx] }
+
+
+Usage
+-----
+
+1. Open the application (at http://127.0.0.1:8000/gitrefinery/ when running
+   a local test) and log in with the button at the top right if you haven't
+   already
+2. Click "Add repository", enter the details and click "Save"
+3. Click "Add release", enter the details and click "Save"
+4. Click "Import release" and wait for the repository to be fetched - you
+   can see progress on the console if you're running the test server
+5. You can click on individual shortlog links to expand to see the full
+   commit message. If you define some categories (using the admin interface),
+   then you can click on a category to add the commit to that category and
+   add notes specific to the category - these will appear in the final
+   release notes output under the category. If no notes are entered, the
+   commit shortlog will be used.
+6. Enter notes for commits as desired. You can use the search functionality
+   to find commits, and label commits for easy searching later.
+7. When finished, you can see the entire list of commit notes by clicking
+   on the "Review notes" button at the bottom of the page. If these are to
+   your satisfaction, just copy and paste to your release notes document,
+   and you're done!
+
+
+Security Considerations
+-----------------------
+
+Some things to be aware of from a security perspective:
+
+* By default, anyone can register themselves an account. If you wish to
+  disable new user registration and manage users manually through the admin
+  interface instead, then add the following line to docker/settings.py:
+
+REGISTRATION_OPEN = False
+
+  Then, assuming you have already run dockersetup.py to install the
+  application, run the following command to update it:
+
+./dockersetup.py -u
+
+* By default, dockersetup.py enables connection to the web server via
+  HTTPS using a self-signed certificate; connections via HTTP are
+  re-directed to HTTPS. However, the self-signed certificate is only
+  intended to provide a minimum level of security, but will result in
+  browser warnings and is not recommended for production - instead,
+  obtain and use your own certificate/key pair corresponding to the
+  domain which will be used to access the application in production,
+  or alternatively if the application is accessible to the internet you
+  can use Let's Encrypt.
+
+* Django supports several databases. By default, dockersetup.py sets up mariadb
+  for database and uses default settings from upstream. For production setup, 
+  you might consider applying different rules or use your preferred
+  database.
+
+  https://docs.djangoproject.com/en/3.2/ref/databases/
+
+* If you provide your own certificates for HTTPS, you should probably
+  also enable HSTS in your configuration. Refer to the Django Security
+  guide for details on how to do that:
+
+  https://docs.djangoproject.com/en/3.2/topics/security/#ssl-https
+
+* To reset a forgotten account password, you can either use the password
+  reset function ( /accounts/password_reset/ ) or alternatively from the
+  backend you can run the following command:
+
+  docker-compose exec layersapp /opt/layerindex/manage.py changepassword <username>
+
+* The web-based password reset function will ask the user answers to
+  security questions they selected and answered when they created the
+  account. Admins can configure the selectable security questions in
+  the admin interface under "Security questions"; however, be cautious
+  about deleting or substantially changing a question if you already
+  have user accounts that have given answers to that question, as doing
+  so will invalidate the user-set answers. You can check this if you go
+  to delete the security question in the admin interface - any user
+  answers will show up as "Security question answers" listed to be
+  deleted along with the question.
+
+  Note: the superuser created during setup will not have answers to
+  security questions set, so if you think you might need to use the
+  password reset function later you will need to set these by logging
+  into the application and then going to Edit Profile on the top-right
+  user drop-down menu.
+
+* Security question answers are stored using the same mechanism as
+  for passwords, i.e. a secure one-way hash; thus answers cannot be
+  retrieved from the database once set. Additionally, if a user wants
+  to change one of their answers via the Edit Profile function, they
+  will be required to re-specify all of them.
+
+* Account lockout: this application will lock out the user in two ways:
+
+  - By IP address (using django-axes) after too many invalid login attempts.
+    (default 3). The lockout can be removed using the following command:
+
+    docker-compose exec layersapp /opt/layerindex/manage.py axes_reset
+
+    If you wish to disable this, remove or comment out "axes" in
+    INSTALLED_APPS. For more information on configuring axes, see:
+
+    https://django-axes.readthedocs.io/en/latest/
+
+  - By account for too many incorrect password reset attempts. To remove
+    this lockout, log into the admin interface, go to Users, click on the
+    the user, tick the Active checkbox and then save.
+
+
+Maintenance
+-----------
+
+The code for this application is maintained by the Yocto Project.
+
+The latest version of the code can always be found here:
+
+  http://git.yoctoproject.org/cgit/cgit.cgi/git-refinery-web/
+
+Contributions are welcome. Please send patches / pull requests to
+yocto@yoctoproject.org with '[git-refinery-web]' in the subject.
+
+
+License
+-------
+
+This application is based upon the Django project template, whose files
+are covered by the BSD license and are copyright (c) Django Software
+Foundation and individual contributors.
+
+Bundled Bootstrap 3 (including Glyphicons) is redistributed under the
+MIT license.
+
+Bundled jQuery is redistributed under the MIT license.
+
+Bundled JavaScript Cookie is redistributed under the MIT license.
+
+All other content is copyright (C) 2014-2018 Intel Corporation and
+licensed under the MIT license (unless otherwise noted) - see
+COPYING.MIT for details.
+
+Trademarks
+----------
+
+* Other names and brands may be claimed as the property of others.

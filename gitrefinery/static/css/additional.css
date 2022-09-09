@@ -1,0 +1,214 @@
+html {
+    overflow-y: scroll;
+}
+
+.top-padded { 
+    padding-top: 65px; 
+}
+
+textarea {
+    width:98%;
+}
+
+.rollie {
+    
+    visibility:hidden;
+}
+
+.showRollie:hover .rollie{
+
+    visibility:visible;
+}
+
+.back-button {
+    
+    margin-right:2em;
+
+}
+
+.label a {
+    
+    color:white;
+}
+
+.footer {
+    text-align: center;
+}
+
+.description {
+    margin-bottom: 2em;
+}
+
+.description p {
+    font-size: 1.2em;
+}
+
+.description ul {
+    font-size: 1.2em;
+}
+
+.description li {
+    margin-bottom: 0.5em;
+}
+
+.dependency-well {
+    padding-top: 4px;
+}
+
+h1 .btn {
+    font-weight: normal;
+}
+
+.scrolling {
+height: auto;
+max-height: 120px;
+overflow: auto;
+width: 40.1709%;
+border: 1px solid #DDDDDD;
+padding: 8px;
+}
+
+.scrolling td {
+    padding: 4px;
+}
+
+.scrolling label {
+    margin: 0px;
+}
+
+.submitformintro {
+    padding-bottom: 0.75em;
+}
+
+.formfields input {
+    width: 50%;
+}
+
+.formfields textarea {
+    width: 50%;
+}
+
+.checkboxtd input {
+    width: 25px;
+}
+
+#maintainers {
+    padding-top: 0.75em;
+}
+
+.maintainerform {
+    /* Fix slight jumping at end of expand in Firefox */
+    padding-top: 1px;
+}
+
+.maintainerformfields input {
+    width: 25em;
+}
+
+.custom-help {
+    margin-left: 10px;
+    max-width: 40%;
+    color: #999;
+    vertical-align:top;
+}
+
+.errorlist {
+    color: #b94a48;
+    list-style-type: none;
+    margin-left: 0px;
+}
+
+.copyable {
+    padding-left: 5px;
+    padding-right: 3px;
+}
+
+.captchafield {
+    padding-top: 1em;
+    padding-bottom: 1em;
+}
+
+.captcha {
+    padding-right: 10px;
+    padding-bottom: 10px;
+}
+
+.submitbuttons {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid rgb(238, 238, 238);
+}
+
+.submitbutton {
+    margin-right: 5px;
+}
+
+.hero-evenlyspaced {
+    padding: 35px;
+}
+
+.hero-evenlyspaced h1 {
+    padding-bottom: 0.25em;
+}
+
+.frontpage-button-group {
+    text-align:center !important;
+    padding: 10px;
+}
+
+.frontpage-button-group a {
+    margin: 5px;
+}
+
+.branch {
+    font-weight: bold;
+}
+
+.well-frontpage {
+    background-color: white;
+    height: 100%;
+}
+
+.muted a {
+    color: #66B8E0;
+}
+
+.search-form-table {
+    border-spacing: 2px;
+    border-collapse: separate;
+    padding-bottom: 5px;
+}
+
+.review-notification {
+    margin-top: 2px;
+}
+
+.breadcrumb {
+    background-color: transparent;
+}
+
+.nav-spacer {
+    margin-left: 10px;
+}
+
+.buttonblock {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.buttonblock-btn {
+    margin-left: 8px;
+}
+
+.noborder {
+    border: none;
+}
+
+.hidden-row {
+    padding: 0 !important;
+    border-collapse: collapse
+}
+
+.template-element {
+    display: none;
+}

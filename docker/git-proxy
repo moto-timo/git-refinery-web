@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# This simple proxy script (for git) resides at /opt/bin in the gitrefineryapp
+# container. If you use it, uncomment the appropriate line in .gitproxy
+# this method has been tested using a socks proxy
+PROXY=proxy-us.intel.com
+PORT=911
+
+case $1 in
+    ## NO_PROXY
+    )
+        METHOD="-X connect"
+        ;;
+    *)
+        METHOD="-X 5 -x ${PROXY}:${PORT}"
+        ;;
+esac
+
+# BSD netcat is used to connect
+/bin/nc $METHOD $*

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% comment %}
+
+  git-refinery-web - 404 page template
+
+  Copyright (C) 2014 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+{% block title_append %} - page not found{% endblock %}
+
+{% block content %}
+{% autoescape on %}
+
+<h1>Page not found</h1>
+
+<p>The page you requested was not found.</p>
+
+<p><a href="{% url "frontpage" %}">Return to the front page</a></p>
+
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,5 @@
+{% for chartdata in chartdatalist %}{{ chartdata.chart.name }}
+,{% for cat in chartdata.categorynames %}{% for group in groups %}{{ cat }},{% endfor %}{{ cat }},{% endfor %}Total commits
+,{% for cat in chartdata.categorynames %}{% for group in groups %}{{ group.name }},{% endfor %}Other,{% endfor %},
+{% for releasedata in chartdata.releases %}{{ releasedata.label }},{% for item in releasedata.data %}{{ item|floatformat }}%,{% endfor %}{{ releasedata.total }}
+{% endfor %}{% endfor %}

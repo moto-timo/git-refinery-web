@@ -1,0 +1,21 @@
+{% comment %}
+
+  git-refinery-web - category check list AJAX template
+
+  Copyright (C) 2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+{% autoescape on %}
+                                                    <table><tbody>
+                                                        {% for category in categories %}
+                                                            <tr>
+                                                                <td class="checkboxtd">
+                                                                    <input type="checkbox" class="filtercategorycheckbox" value="{{ category.id }}" id="id_categorycheckbox_{{category.id}}" />
+                                                                </td>
+                                                                <td><label for="id_categorycheckbox_{{category.id}}">{{ category.name }}</label></td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody></table>
+{% endautoescape %}

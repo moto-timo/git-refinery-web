@@ -1,0 +1,32 @@
+* Change bulk operations to use ajax
+* Import/update tags when importing commits (currently hits repo every time)
+* Option to apply multi-operation to all matching commits not just current page (a la gmail)
+* Preview screen before final notes output that allows editing / reordering of notes and displays them split by category
+* Formatting for commit message? Turn [YOCTO #xxxx] into a link?
+* Collapse "xxx rev:" and signed-off-by lines by default to reduce clutter
+* If commit goes missing (e.g. rebase) it'll still show up in the release notes and no way to drop ?
+* Layout of notes editing
+* Advanced keyword searching
+ * Exclusion
+ * Search by file path
+* Allow showing all results in one page?
+* Case-insensitive search?
+* Full-text indexing for speed
+* Indicate if commit changes only lines that were introduced in a commit within the release? (i.e. almost definitely a regression fix)
+* Allow defining a category on the fly within a commit?
+* Allow stats analysis by month/other time period?
+* Provide the ability to collapse multiple entries into one
+* Default set of categories?
+* Strip note texts
+
+
+Bugs:
+* Removing a hidden category is broken (probably on the js end)
+* Return a redirect instead of page content when posting (for multi-action form submit)
+* Error if you have an invalid page in URL
+* Wrongly formatted URL prefix causes error on page load
+* If no results in specified page > last page, redirect to last page
+* If revert is imported after commit that it reverted we'll miss it
+* If revert uses OE-Core hash we'll miss it
+* Sort commit category entries in expander
+* Division by zero on stats page if a release has no commits

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<form id="registration_form" method="post" action="." autocomplete="off">
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+
+    {% for field in form.visible_fields %}
+        {% if field.name in error_fields %}
+        <div class="form-group alert alert-danger">
+        {{ field.errors }}
+        {% else %}
+        <div class="form-group">
+        {% endif %}
+            <div class="control-label {% if field.required %}requiredlabel{% endif %}">
+                {{ field.label_tag }}
+            </div>
+            <div class="controls">
+                {{ field }}
+            </div>
+        <p>
+        {{ field.help_text|safe }}
+        </p>
+        </div>
+    {% endfor %}
+
+  <input type="submit" class="btn btn-default" value="{% trans 'Submit' %}" />
+  {% csrf_token %}
+</form>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#registration_form input:text, #registration_form textarea").first().focus();
+    });
+</script>
+{% endblock %}

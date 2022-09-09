@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  git-refinery-web - edit release page template
+
+  Copyright (C) 2017 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% block title_append %} - {% if form.instance.pk %}edit release{% else %}add release{% endif %} {% endblock %}
+-->
+
+
+
+{% block content %}
+{% autoescape on %}
+
+        <ul class="breadcrumb">
+            <li><a href="{% url 'repositories' %}">repositories</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{% if form.instance.pk %}{{ form.instance.name }}{% else %}add release{% endif %}</li>
+        </ul>
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="page-header">
+                    <h1>{% if form.instance.pk %}Edit {{ form.instance.name }}{% else %}Add release{% endif %}</h1>
+                </div>
+            </div> <!--  end of row -->
+        </div> <!-- end of container-fluid -->
+
+
+<form id="edit_release_form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+<input type="submit" value="Save" class='btn btn-primary' />
+<a href="{% if form.instance.pk %}{% url 'release' form.instance.pk %}{% else %}{% url 'repository' form.instance.repository.name %}{% endif %}" class='btn btn-default'>Cancel</a>
+</form>
+
+{% endautoescape %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#edit_release_form input:text, #edit_release_form textarea").first().focus();
+    });
+</script>
+{% endblock %}

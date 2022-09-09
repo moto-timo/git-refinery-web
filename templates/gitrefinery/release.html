@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  git-refinery-web - release page template
+
+  Copyright (C) 2014-2018 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% autoescape on %}
+{% block title_append %} - {{ release.repository.name }} - {{ release.name }}{% endblock %}
+{% endautoescape %}
+-->
+
+{% block content %}
+
+{% autoescape on %}
+        <ul class="breadcrumb">
+            <li><a href="{% url 'repositories' %}">repositories</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'repository' release.repository.name %}">{{ release.repository.name }}</a> <span class="divider">&rarr;</span></li>
+            <li class="active">{{ release.name }}</li>
+        </ul>
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="page-header">
+                    <h1>{{ release.repository.name }} - {{ release.name }}
+                        {% if user.is_authenticated %}
+                            <span class="pull-right">
+                                <a href="{% url 'edit_release' release.id %}" class="btn btn-default">Edit release</a>
+                                <a href="{% url 'import_commits' release.id %}" class="btn btn-default">Import commits</a>
+                                <a href="{% url 'delete_release' release.id %}?cancel=release" class="btn btn-warning">Delete release</a>
+                            </span>
+                        {% endif %}
+                    </h1>
+                </div>
+            </div> <!--  end of row -->
+        </div> <!-- end of container-fluid -->
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <form id="filter-form" class="form-inline" action="{% url 'release' release.id %}" method="get">
+                    <input type="text" class="form-control input-xlarge" placeholder="Search commits" name="q" value="{{ search_keyword }}" />
+                    <select name="category" class="form-control input-medium">
+                        <option value="" {% if search_category == -1 %}selected{% endif %}>-------</option>
+                        <option value="-2" {% if search_category == -2 %}selected{% endif %}>-uncategorised-</option>
+                        {% for cat in release.repository.category_set.all %}
+                            <option value="{{ cat.id }}" {% if search_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="authorgroup" class="form-control input-medium">
+                        <option value="" {% if search_authorgroup == -1 %}selected{% endif %}>-------</option>
+                        <option value="-2" {% if search_authorgroup == -2 %}selected{% endif %}>-no group-</option>
+                        {% for group in authorgroups %}
+                            <option value="{{ group.id }}" {% if search_authorgroup == group.id %}selected{% endif %}>{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <div class="input-group">
+                        <input type="text" class="input-large" id="id_excludecategories_display" value="{{ excludecategories_display }}" />
+                        <span class="input-group-btn">
+                            <button type="button" id="id_select_excludecategories" class="btn btn-default" data-toggle="modal" data-target="#excludecategoryDialog">...</button>
+                        </span>
+                    </div>
+                    <input type="hidden" id="id_excludecategories" name="excludecategories" value="{{ excludecategories|join:"," }}" />
+
+                    <div id="excludecategoryDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="categoryDialogLabel">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal">×</button>
+                                    <h3 id="categoryDialogLabel">Select categories to exclude</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="scrolling" id="id_excludecategorydialog_list">
+                                    </div>
+                                    <div class="buttonblock">
+                                    <button type="button" class="btn btn-default" id="id_excludecategorydialog_select_all">Select all</button>
+                                    <button type="button" class="btn buttonblock-btn btn-default" id="id_excludecategorydialog_select_none">Select none</button>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary" id="id_excludecategorydialog_ok" data-dismiss="modal">OK</button>
+                                    <button class="btn btn-default" id="id_excludecategorydialog_cancel" data-dismiss="modal">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-default" type="submit">Search</button>
+                </form>
+            </div>
+
+            {% if commits %}
+            <div class="row">
+                <form id="recipe-select-form" method="POST">
+                    {% csrf_token %}
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                {% if user.is_authenticated %}
+                                <th></th>
+                                {% endif %}
+                                <th class="col-md-8">Message</th>
+                                <th>Author</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        {% if user.is_authenticated %}
+                        <tfoot>
+                            <tr class="form-inline">
+                                <td colspan="4">
+                                    <button class="btn btn-default" type="button" id="selectall">Select all</button>
+                                    <button class="btn btn-default" type="button" id="selectnone">Select none</button>
+                                    <select name="action" class="form-control input-large buttonblock-btn">
+                                        <option value="categorise">Add to category</option>
+                                        <option value="uncategorise">Remove from category</option>
+                                    </select>
+                                    <select name="catvalue" class="form-control input-medium">
+                                        <option value="">-------</option>
+                                        {% for cat in release.repository.category_set.all %}
+                                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-default" type="submit" value="apply">Apply</button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                        {% endif %}
+
+
+                        <tbody>
+                            {% for commit in commits %}
+                                <tr {% if false %}class="text-muted"{% endif %} id="commitrow-{{ commit.revision }}">
+                                    {% if user.is_authenticated %}
+                                    <td><input type="checkbox" class="selecteditems" name="selecteditems" value="{{ commit.revision }}"></input></td>
+                                    {% endif %}
+                                    <td>
+                                        <!-- <i class="glyphicon glyphicon-file{% if not commit.note %} hide{% endif %}" id="note-icon-{{ commit.revision }}"></i> -->
+                                        <a href="#" data-toggle="collapse" class="commitlink" data-commit="{{ commit.revision }}" id="commitlink-{{ commit.revision }}">
+                                            {{ commit.shortlog }}
+                                        </a>
+                                        {% for cat in commit.commitcategory_set.all %}
+                                            <span class="commitcategory-{{ commit.revision }}-{{ cat.category.id }}">
+                                                <a href="{% url 'release' release.id %}?category={{ cat.category.id }}"><span class="label {% if cat.has_unique_note %}label-success{% else %}label-warning{% endif %}" id="label-commitcat-{{ commit.revision }}-{{ cat.category.name }}">{{ cat.category.name }}</span></a>
+                                            </span>
+                                        {% endfor %}
+                                        {% for tag in commit.tags %}
+                                            <span class="label label-info">{{ tag }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ commit.author }}</td>
+                                    <td>{{ commit.committed_date|date }}</td>
+                                </tr>
+                                <tr><td colspan="4" class="hidden-row"><div id="div-{{ commit.revision }}" class="accordian-body collapse commitmessage" data-commit="{{ commit.revision }}">
+                                    <pre class="noborder">{{ commit.commit_message }}</pre>
+                                    {% if commit.url %}<a href="{{ commit.url }}" target="_blank" rel="noreferrer">{% endif %}
+                                    <small><p class="text-right">{{ commit.revision }}</p></small>
+                                    {% if commit.url %}</a>{% endif %}
+                                    {% if user.is_authenticated %}
+                                        <div class="commitcategoryeditor template-element">
+                                            <div class="form-inline">
+                                                <div class="label label-warning"></div>
+                                                <button type="button" class="btn btn-default savebutton">Save</button>
+                                                <button type="button" class="btn btn-default removebutton">Remove</button>
+                                                <span class="alert success fade" data-alert="alert">Saved</span>
+                                            </div>
+                                            <textarea rows="2" class="committext"></textarea>
+                                        </div>
+
+                                        {% for commitcat in commit.commitcategory_set.all %}
+                                        <div class="commitcategoryeditor commitcategory-{{ commit.revision }}-{{ commitcat.category.id }}" data-commit="{{ commit.revision }}" data-category="{{ commitcat.category.id }}">
+                                        <div class="form-inline">
+                                            <div class="label {% if commitcat.has_unique_note %}label-success{% else %}label-warning{% endif %}">{{ commitcat.category.name }}</div>
+                                            <button type="button" class="btn btn-default savebutton">Save</button>
+                                            <button type="button" class="btn btn-default removebutton">Remove</button>
+                                            <span class="alert success fade" data-alert="alert">Saved</span>
+                                        </div>
+                                        <textarea rows="2" class="committext">{{ commitcat.note }}</textarea>
+                                        </div>
+                                        {% endfor %}
+
+                                        {% for cat in release.repository.category_set.all %}
+                                            {% if not cat.hidden %}
+                                            <a href="#" class="addcategory" data-category="{{ cat.id }}"><div class="label label-default">{{ cat.name }}</div></a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% elif commit.note %}
+                                        <div class="well">{{ commit.note }}</div>
+                                    {% endif %}
+                                </div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </form>
+
+                {% if is_paginated %}
+                    {% load pagination %}
+                    {% pagination page_obj %}
+                {% endif %}
+
+            {% else %}
+                <p>No matching commits found for this release.</p>
+            {% endif %}
+
+            </div> <!-- end of row -->
+            <a href="{% url 'release_notes' release.id %}" class="btn btn-lg btn-primary">Review notes &gt;</a>
+
+        </div> <!-- end of container-fluid -->
+
+
+{% endautoescape %}
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{% static "js/ajax.js" %}"></script>
+<script>
+    update_excludecategories_display = function() {
+        categorynames = [];
+        categoryids = [];
+        $('.filtercategorycheckbox:checked').each(function() {
+            categorynames.push($("label[for="+parseInt($(this).attr('id'))+"]").html());
+            categoryids.push($(this).attr('value'));
+        });
+        if(categorynames.length)
+            $('#id_excludecategories_display').val(categorynames)
+        else
+            $('#id_excludecategories_display').val(' (none)');
+        $('#id_excludecategories').val(categoryids)
+    }
+
+{% if user.is_authenticated %}
+    // Borrowed from  http://www.jquery4u.com/tutorials/jqueryhtml5-input-focus-cursor-positions/
+    $.fn.setCursorPosition = function(pos) {
+        this.each(function(index, elem) {
+            if (elem.setSelectionRange) {
+                elem.setSelectionRange(pos, pos);
+            }
+            else if (elem.createTextRange) {
+                var range = elem.createTextRange();
+                range.collapse(true);
+                range.moveEnd('character', pos);
+                range.moveStart('character', pos);
+                range.select();
+            }
+        });
+        return this;
+    };
+
+    var saveTimer = null;
+    saveMessage = function(commit, category) {
+        clearTimeout(saveTimer);
+        editor = $(".commitcategoryeditor").filter("[data-commit=" + commit + "]").filter("[data-category=" + category + "]")
+        note = $(".committext", editor).val()
+        alert = $(".alert", editor)
+        $.ajax({type: "POST", url : '{% url 'set_commit_note' %}',
+            data: {
+                "release": "{{ release.id }}",
+                "commit": commit,
+                "category": category,
+                "note": note,
+                },
+            error: function (xhr, ajaxOptions, errorThrown) {
+                alert.removeClass('alert-success')
+                alert.addClass('alert-error')
+                alert.addClass('in');
+                alert.html('Saving failed')
+            },
+            success: function (data) {
+                /*
+                noteicon = $('#note-icon-' + commit)
+                if ( note.length ) {
+                    noteicon.removeClass('hide');
+                    noteicon.show();
+                }
+                else {
+                    noteicon.hide();
+                }
+                */
+                alert.removeClass('alert-error')
+                alert.addClass('alert-success')
+                alert.addClass('in');
+                alert.html('Saved successfully')
+                setTimeout(function() {
+                    alert.removeClass('in');
+                }, 2000);
+            }
+        });
+    }
+
+    dropCategory = function(commit, category) {
+        $(".commitcategory-" + commit + "-" + category).remove()
+        $(".commitmessage").filter("[data-commit=" + commit + "]").children(".addcategory").filter("[data-category=" + category + "]").show()
+    }
+
+    removeCommitCategory = function(commit, category) {
+        alert = $('#alert-' + commit + '-' + category)
+        $.ajax({type: "POST", url : '{% url 'remove_commit_category' %}',
+            data: {
+                "release": "{{ release.id }}",
+                "commit": commit,
+                "category": category,
+                },
+            error: function (xhr, ajaxOptions, errorThrown) {
+                alert.removeClass('alert-success')
+                alert.addClass('alert-error')
+                alert.addClass('in');
+                alert.html('Removing from category failed')
+            },
+            success: function (data) {
+                dropCategory(commit, category)
+            }
+        });
+    }
+{% endif %}
+
+    select_excludecategory_checkboxes = function() {
+        $('.filtercategorycheckbox').prop('checked', false);
+        excludecategories = $('#id_excludecategories').val().split(',');
+        for(i in excludecategories) {
+            $('#id_categorycheckbox_' + excludecategories[i]).prop('checked', true);
+        }
+    }
+    setup_excludecategory_list = function() {
+        if( $.trim($('#id_excludecategorydialog_list').html()) ) {
+            select_excludecategory_checkboxes()
+        }
+        else {
+            $('#id_excludecategorydialog_list').html('Loading...');
+            $('#id_excludecategorydialog_ok').prop('disabled', true)
+            $('#id_excludecategorydialog_ok').addClass('disabled')
+            $.ajax({
+                url: '{% url 'category_checklist' release.repository.id %}',
+                dataType: 'html',
+                success: function( resp ) {
+                    $('#id_excludecategorydialog_list').html(resp);
+                    select_excludecategory_checkboxes()
+                    $('#id_excludecategorydialog_ok').prop('disabled', false)
+                    $('#id_excludecategorydialog_ok').removeClass('disabled')
+                },
+                error: function( req, status, err ) {
+                    $('#id_excludecategorydialog_list').html(err);
+                    console.log( 'something went wrong', status, err );
+                }
+            });
+        }
+    }
+    $(document).ready(function() {
+        $('#id_excludecategories_display').prop('readonly', true)
+    });
+    $('#id_excludecategorydialog_select_all').click(function (e) {
+        $('.filtercategorycheckbox').prop('checked', true);
+    });
+    $('#id_excludecategorydialog_select_none').click(function (e) {
+        $('.filtercategorycheckbox').prop('checked', false);
+    });
+    $('#id_excludecategorydialog_ok').click(function (e) {
+        update_excludecategories_display()
+    });
+    $('#id_select_excludecategories').click(function (e) {
+        setup_excludecategory_list()
+    });
+
+    $('a[href=\\#]').click(function(e) {
+        // Prevent invalid links from jumping page scroll
+        e.preventDefault()
+    });
+    $('.commitlink').on('click', function () {
+        commit = $(this).attr("data-commit")
+        commit_div = $('#div-' + commit)
+        if ( commit_div.hasClass("in")) {
+            commit_div.collapse("hide");
+        }
+        else {
+            $('.commitmessage').not(commit_div).each(function() {
+                if ( $(this).hasClass("in")) {
+                    $(this).collapse("hide");
+                }
+            });
+            commit_div.collapse("show");
+        }
+    });
+{% if user.is_authenticated %}
+    $('.commitmessage').on('shown', function () {
+        commit = $(this).attr("data-commit")
+        el = $(this).find('textarea').first()
+        if(el.length) {
+            el.focus()
+            el.setCursorPosition(el.val().length)
+        }
+    });
+    $('#selectall').click(function() {
+        $(".selecteditems").prop("checked", true)
+    });
+    $('#selectnone').click(function() {
+        $(".selecteditems").prop("checked", false)
+    });
+
+    $('.savebutton').click(function() {
+        editor = $(this).parents(".commitcategoryeditor")
+        commit = editor.attr("data-commit")
+        category = editor.attr("data-category")
+        saveMessage(commit, category);
+    });
+    $('.removebutton').click(function() {
+        editor = $(this).parents(".commitcategoryeditor")
+        commit = editor.attr("data-commit")
+        category = editor.attr("data-category")
+        removeCommitCategory(commit, category)
+    });
+    $('.addcategory').click(function() {
+        commit_div = $(this).parents(".commitmessage")
+        commit = commit_div.attr("data-commit")
+        category = $(this).attr("data-category")
+        newcat = $(".template-element", commit_div).filter('.commitcategoryeditor').clone(true)
+        newcat.insertAfter($(".commitcategoryeditor", commit_div).last())
+        newcat.removeClass("template-element")
+        newcat.addClass("commitcategory-" + commit + "-" + category)
+        $(".label", newcat).text($(this).text())
+        newcat.show()
+        newcat.attr("data-commit", commit)
+        newcat.attr("data-category", category)
+        $(this).hide()
+        el = $(".committext", newcat)
+        el.focus()
+        el.setCursorPosition(el.val().length)
+        saveMessage(commit, category);
+    });
+    $('.committext').keyup(function() {
+        editor = $(this).parents(".commitcategoryeditor")
+        commit = editor.attr("data-commit")
+        category = editor.attr("data-category")
+        $('.alert', parent).removeClass('in');
+        if (saveTimer) {
+            clearTimeout(saveTimer);
+        }
+        saveTimer = setTimeout(function() {
+            saveMessage(commit, category)
+        }, 1000);
+    });
+
+    $('.commitcategoryeditor').each(function() {
+        category = $(this).attr("data-category")
+        $(this).parent().children(".addcategory").filter("[data-category=" + category + "]").hide()
+    });
+{% endif %}
+
+</script>
+{% endblock %}

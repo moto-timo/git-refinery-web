@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  git-refinery-web - release notes page template
+
+  Copyright (C) 2014 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% autoescape on %}
+{% block title_append %} - {{ release.name }} - notes{% endblock %}
+{% endautoescape %}
+-->
+
+{% block content %}
+
+{% autoescape on %}
+        <ul class="breadcrumb">
+            <li><a href="{% url 'repositories' %}">repositories</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'repository' release.repository.name %}">{{ release.repository.name }}</a> <span class="divider">&rarr;</span></li>
+            <li><a href="{% url 'release' release.id %}">{{ release.name }}</a> <span class="divider">&rarr;</span></li>
+            <li class="active">Notes</li>
+        </ul>
+
+        <div class="container-fluid">
+
+            <textarea rows="16" id="textarea-notes">{{ release_notes }}</textarea>
+
+        </div> <!-- end of container-fluid -->
+
+
+{% endautoescape %}
+
+{% endblock %}
+

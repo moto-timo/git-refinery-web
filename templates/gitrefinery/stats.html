@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% comment %}
+
+  git-refinery-web - stats page template
+
+  Copyright (C) 2017 Intel Corporation
+  Licensed under the MIT license, see COPYING.MIT for details
+
+{% endcomment %}
+
+
+<!--
+{% autoescape on %}
+{% block title_append %} - Stats{% endblock %}
+{% endautoescape %}
+-->
+
+{% block content %}
+
+{% autoescape on %}
+        {% for chartdata in chartdatalist %}
+        <div class="container-fluid">
+            <div class="row">
+                <div class="page-header">
+                    <h2>{{ chartdata.chart.name }}</h2>
+                </div>
+            </div> <!--  end of row -->
+        </div> <!-- end of container-fluid -->
+
+        <div class="container-fluid">
+            <div class="row">
+                <table class="table-bordered" width="100%">
+                    <thead>
+                        <tr>
+                            <th rowspan="2"></th>
+                            {% for cat in chartdata.categorynames %}
+                            <th colspan="{{ groups.count|add:"1" }}">{{ cat }}</th>
+                            {% endfor %}
+                            <th rowspan="2" width="60">Total commits</th>
+                        </tr>
+                        <tr>
+                            {% for cat in chartdata.categorynames %}
+                            {% for group in groups %}
+                            <th>{{ group.name }}</th>
+                            {% endfor %}
+                            <th>Other</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for releasedata in chartdata.releases %}
+                        <tr>
+                            <th>{{ releasedata.label }}</th>
+                            {% for item in releasedata.data %}
+                            <td align="right">{{ item|floatformat }}%</td>
+                            {% endfor %}
+                            <td align="right">{{ releasedata.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div> <!--  end of row-fluid -->
+        </div> <!-- end of container-fluid -->
+        {% endfor %}
+        <br>
+        <a href="{% url 'stats_csv' %}" class="btn btn-default pull-right"><span class="glyphicon glyphicon-save-file" aria-hidden="true"></span></i> Export CSV</a>
+{% endautoescape %}
+
+{% endblock %}
+

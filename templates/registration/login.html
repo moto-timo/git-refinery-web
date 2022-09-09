@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<form id="login_form" method="post" action=".">
+  {{ form.as_p }}
+
+  <input type="submit" class="btn btn-default" value="{% trans 'Log in' %}" />
+  <input type="hidden" name="next" value="{{ next }}" />
+  {% csrf_token %}
+</form>
+
+<p>{% trans "Forgot password" %}? <a href="{% url "password_reset" %}">{% trans "Reset it" %}</a>!</p>
+<p>{% trans "Don't have an account" %}? <a href="{% url "django_registration_register" %}">{% trans "Create one now" %}</a>!</p>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#login_form input:text, #login_form textarea").first().focus();
+    });
+</script>
+{% endblock %}

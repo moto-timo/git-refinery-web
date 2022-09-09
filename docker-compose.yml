@@ -1,0 +1,129 @@
+# Copyright (C) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
+version: '2.4'
+services:
+  gitrefinerydb:
+    image: mariadb:10.6
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/mysqld
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --wait_timeout=28800 --max_allowed_packet=128M
+    # might need secure connection and custom configuration for production 
+    # --ssl-cert=</path/to/cert.pem> --ssl-key=</path/to/key.pem> --ssl-ca=</path/to/ca.pem> 
+    environment:
+     - "MYSQL_ROOT_PASSWORD=2C^!E8694E"
+     - "MYSQL_DATABASE=gitrefinerydb"
+    volumes:
+     - sqldatavolume:/var/lib/mysql
+    #- <custom/cert/path>:<path/to/cert>
+    #- <custom/config/path>:/etc/mysql/conf.d
+    restart: on-failure:5
+    security_opt:
+     - no-new-privileges
+    cpu_shares: 512
+    mem_limit: 1G
+    pids_limit: 1024
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "--silent"]
+    user: "mysql"
+    container_name: gitrefinerydb
+  gitrefineryapp:
+    depends_on:
+      - gitrefinerydb
+    build: .
+    image: gitrefinery-app
+    read_only: true
+    tmpfs:
+      - /tmp
+    hostname: localhost
+    volumes:
+     - gitrefinerymeta:/opt/workdir
+     - patchvolume:/opt/imagecompare-patches:z
+     - logvolume:/opt/gitrefineryweb-task-logs:z
+     - srcvolume:/opt/sources:z
+    environment:
+     #- "SECRET_KEY=<set this here>"
+     - "DATABASE_USER=root"
+     - "DATABASE_PASSWORD=testingpw"
+     - "DATABASE_HOST=gitrefinerydb"
+     - "RABBITMQ_DEFAULT_USER=guest"
+     - "RABBITMQ_DEFAULT_PASS=guest"
+     #- "EMAIL_HOST=<set this here>"
+     #- "EMAIL_PORT=<set this here if not the default>"
+     #- "EMAIL_USER=<set this here if needed>"
+     #- "EMAIL_PASSWORD=<set this here if needed>"
+     #- "EMAIL_USE_SSL=<set this here if needed>"
+     #- "EMAIL_USE_TLS=<set this here if needed>"
+     #- "DEBUG=1"
+    restart: on-failure:5
+    security_opt:
+     - no-new-privileges
+    cpu_shares: 1024
+    mem_limit: 1G
+    pids_limit: 4096
+    healthcheck:
+     test: ["CMD", "django-admin", "check", "admin"]
+    container_name: gitrefineryapp
+  gitrefineryweb:
+    depends_on:
+      - gitrefineryapp
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: gitrefinery-web
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx/client_temp
+      - /var/cache/nginx/proxy_temp
+      - /var/cache/nginx/fastcgi_temp
+      - /var/cache/nginx/uwsgi_temp
+      - /var/cache/nginx/scgi_temp
+    hostname: localhost
+    ports:
+     - "127.0.0.1:8080:80"
+     - "127.0.0.1:8081:443"
+    ## For production you want these instead
+    # - "80:80"
+    # - "443:443"
+    volumes:
+     - gitrefinerystatic:/usr/share/nginx/html:ro
+     - patchvolume:/opt/www/protected/imagecompare-patches:ro
+     - srcvolume:/opt/www/protected/sources:ro
+     - ./docker/certs:/opt/cert:ro
+     - certbotwww:/var/www/certbot:ro
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: on-failure:5
+    security_opt:
+     - no-new-privileges
+    cpu_shares: 64
+    mem_limit: 256M
+    pids_limit: 1024
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+    # For Production, you might want to specify non-root user
+    # user: "nginx"
+    container_name: gitrefineryweb
+  #gitrefinerycertbot:
+    #image: certbot/certbot
+    #volumes:
+     #- ./docker/certs:/opt/cert
+     #- certbotwww:/var/www/certbot:z
+    #container_name: gitrefinerycertbot
+    #entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  gitrefinerymeta:
+  gitrefinerystatic:
+  patchvolume:
+  logvolume:
+  srcvolume:
+  certbotwww:
+  sqldatavolume:

@@ -1,0 +1,8 @@
+# Copyright (C) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
+FROM nginx:alpine
+LABEL maintainer="Lee Chee Yang <chee.yang.lee@intel.com>"
+COPY docker/nginx-ssl-edited.conf /etc/nginx/nginx.conf
