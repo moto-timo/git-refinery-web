@@ -1,1 +1,4 @@
-hide=1
+hide=0
+section=-Yocto Tools
+desc=Web based release note generation utility
+defbranch=main
